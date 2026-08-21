@@ -140,7 +140,7 @@ grep scraped_at data/latest.json | head -1
 | Topic | Notes |
 |-------|-------|
 | Password ≠ DoS protection | A shared password stops casual browsing; it does **not** stop determined abuse or volumetric attacks. |
-| Rate limits | App enforces ~60 req/min globally and ~5 req/min on `POST /login` (HTTP 429). This blunts brute-force and casual flooding but is not enterprise DDoS mitigation. |
+| Rate limits | App enforces ~60 req/min globally and ~5 req/min on `POST /login` (HTTP 429). This blunts brute-force and casual flooding but is not enterprise DDoS mitigation. Behind ngrok, the limiter key uses the **first** `X-Forwarded-For` address (trust assumption: ngrok is the sole public ingress). Without that header, limits apply per `request.client.host` (localhost when accessed directly). |
 | Bind localhost | uvicorn listens on `127.0.0.1:8000` only; ngrok is the sole public ingress. Do not bind `0.0.0.0` without additional firewalling. |
 | No scrape trigger | There is **no** HTTP endpoint to trigger a scrape. Scraping happens only via cron or running `scrape.py` on the host. |
 | Secrets | Never commit `.env`, passwords, or ngrok authtokens. `.env` and `logs/` are gitignored. |

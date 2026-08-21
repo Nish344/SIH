@@ -1,4 +1,3 @@
-import os
 import pytest
 from dashboard.auth import (
     create_session_token,
