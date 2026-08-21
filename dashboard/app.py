@@ -45,9 +45,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         settings: Settings = Depends(get_settings),
     ) -> Response:
         content_length = request.headers.get("content-length")
-        if content_length is not None and int(content_length) > 1024:
-            raise HTTPException(status_code=413, detail="request entity too large")
+        if content_length is not None:
+            try:
+                if int(content_length) > 1024:
+                    raise HTTPException(
+                        status_code=413, detail="request entity too large"
+                    )
+            except ValueError:
+                raise HTTPException(status_code=400, detail="invalid content-length")
         body = await request.json()
+        if not isinstance(body, dict):
+            raise HTTPException(status_code=400, detail="invalid request body")
         password = body.get("password", "")
         if not verify_password(password, settings.password):
             raise HTTPException(status_code=401, detail="invalid credentials")
