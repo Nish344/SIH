@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { expect, it } from "vitest";
 import { buildPrompt } from "./prompt";
 import type { PsRecord } from "../types";
 
