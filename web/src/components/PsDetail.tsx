@@ -7,6 +7,7 @@ type PsDetailProps = {
   record: PsRecord | null;
   sourceUrl: string;
   onToast: (message: string) => void;
+  onBack?: () => void;
 };
 
 const LLM_BUTTONS: { provider: LlmProvider; label: string }[] = [
@@ -15,7 +16,7 @@ const LLM_BUTTONS: { provider: LlmProvider; label: string }[] = [
   { provider: "gemini", label: "Gemini" },
 ];
 
-export function PsDetail({ record, sourceUrl, onToast }: PsDetailProps) {
+export function PsDetail({ record, sourceUrl, onToast, onBack }: PsDetailProps) {
   if (!record) {
     return (
       <div className="ps-detail empty">
@@ -50,6 +51,11 @@ export function PsDetail({ record, sourceUrl, onToast }: PsDetailProps) {
 
   return (
     <article className="ps-detail">
+      {onBack && (
+        <button type="button" className="detail-back" onClick={onBack}>
+          ← Back to list
+        </button>
+      )}
       <header className="detail-header">
         <span className="detail-ps-num">{record.ps_number}</span>
         <h2>{record.title}</h2>

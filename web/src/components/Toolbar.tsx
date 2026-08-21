@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Filters, SortMode } from "../types";
+import { Select } from "./Select";
 
 const SORT_OPTIONS: { value: SortMode; label: string }[] = [
   { value: "hottest", label: "Hottest" },
@@ -36,93 +37,102 @@ export function Toolbar({
     onFiltersChange({ ...filters, [key]: value });
   }
 
+  const categoryOpts = [
+    { value: "", label: "All categories" },
+    ...categories.map((c) => ({ value: c, label: c })),
+  ];
+  const themeOpts = [
+    { value: "", label: "All themes" },
+    ...themes.map((t) => ({ value: t, label: t })),
+  ];
+  const orgOpts = [
+    { value: "", label: "All orgs" },
+    ...organizations.map((o) => ({ value: o, label: o })),
+  ];
+  const sortOpts = SORT_OPTIONS.map((o) => ({ value: o.value, label: o.label }));
+
   return (
     <div className="toolbar">
-      <div className="toolbar-primary">
+      <div className="toolbar-bar">
         <input
           type="search"
           className="toolbar-search"
-          placeholder="Search title, org, PS number, description…"
+          placeholder="Search…"
           value={filters.query}
           onChange={(e) => setFilter("query", e.target.value)}
           aria-label="Search problem statements"
         />
-        <label className="toolbar-sort">
-          Sort
-          <select value={sort} onChange={(e) => onSortChange(e.target.value as SortMode)}>
-            {SORT_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
 
-      <button
-        type="button"
-        className="toolbar-filters-toggle"
-        aria-expanded={filtersOpen}
-        aria-controls="toolbar-facet-filters"
-        onClick={() => setFiltersOpen((open) => !open)}
-      >
-        Filters
-        {hasFacetFilters && <span className="toolbar-filters-badge" aria-hidden="true" />}
-      </button>
+        <div className="toolbar-facets">
+          <Select
+            label="Category"
+            compact
+            className="picker--cat"
+            value={filters.category}
+            options={categoryOpts}
+            onChange={(v) => setFilter("category", v)}
+          />
+          <Select
+            label="Theme"
+            compact
+            className="picker--theme"
+            value={filters.theme}
+            options={themeOpts}
+            onChange={(v) => setFilter("theme", v)}
+          />
+          <Select
+            label="Organization"
+            compact
+            className="picker--org"
+            value={filters.organization}
+            options={orgOpts}
+            onChange={(v) => setFilter("organization", v)}
+          />
+        </div>
+
+        <Select
+          label="Sort"
+          compact
+          className="picker--sort"
+          value={sort}
+          options={sortOpts}
+          onChange={(v) => onSortChange(v as SortMode)}
+        />
+
+        <button
+          type="button"
+          className="toolbar-filters-toggle"
+          aria-expanded={filtersOpen}
+          aria-controls="toolbar-facet-filters"
+          onClick={() => setFiltersOpen((open) => !open)}
+        >
+          Filters
+          {hasFacetFilters && <span className="toolbar-filters-badge" aria-hidden="true" />}
+        </button>
+      </div>
 
       <div
         id="toolbar-facet-filters"
-        className={`toolbar-filters${filtersOpen ? " is-open" : ""}`}
+        className={`toolbar-facets-mobile${filtersOpen ? " is-open" : ""}`}
       >
-        <label>
-          Category
-          <select
-            value={filters.category}
-            onChange={(e) => setFilter("category", e.target.value)}
-          >
-            <option value="">All</option>
-            {categories.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Theme
-          <select value={filters.theme} onChange={(e) => setFilter("theme", e.target.value)}>
-            <option value="">All</option>
-            {themes.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Organization
-          <select
-            value={filters.organization}
-            onChange={(e) => setFilter("organization", e.target.value)}
-          >
-            <option value="">All</option>
-            {organizations.map((o) => (
-              <option key={o} value={o}>
-                {o}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="toolbar-sort toolbar-sort--inline">
-          Sort
-          <select value={sort} onChange={(e) => onSortChange(e.target.value as SortMode)}>
-            {SORT_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <Select
+          label="Category"
+          value={filters.category}
+          options={categoryOpts}
+          onChange={(v) => setFilter("category", v)}
+        />
+        <Select
+          label="Theme"
+          value={filters.theme}
+          options={themeOpts}
+          onChange={(v) => setFilter("theme", v)}
+        />
+        <Select
+          label="Organization"
+          value={filters.organization}
+          options={orgOpts}
+          onChange={(v) => setFilter("organization", v)}
+        />
       </div>
     </div>
   );

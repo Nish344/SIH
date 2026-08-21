@@ -20,7 +20,7 @@ export function PsList({ records, selectedId, onSelect }: PsListProps) {
     <ul className="ps-list" role="listbox" aria-label="Problem statements">
       {records.map((record) => {
         const selected = record.ps_id === selectedId;
-        const fillPct = Math.round(record.fill_ratio * 100);
+        const fillPct = Math.min(100, Math.round(record.fill_ratio * 100));
         return (
           <li key={record.ps_id}>
             <button
@@ -31,23 +31,29 @@ export function PsList({ records, selectedId, onSelect }: PsListProps) {
               onClick={() => onSelect(record)}
             >
               <span className="ps-row-num">{record.ps_number}</span>
-              <span className="ps-row-main">
-                <span className="ps-row-title">{record.title}</span>
-                <span className="ps-row-org">{record.organization}</span>
+              <span className="ps-row-title">{record.title}</span>
+              <span className="ps-ideas" title="Submitted ideas / cap">
+                {record.idea_count}
+                <span className="ps-ideas-cap">/{record.idea_cap}</span>
               </span>
-              <span className="ps-row-meta">
+              <span className="ps-row-sub">
+                <span className="ps-row-org">{record.organization}</span>
+                <span className="ps-dot" aria-hidden="true">
+                  ·
+                </span>
                 <span className="ps-tag">{record.theme}</span>
+                <span className="ps-dot" aria-hidden="true">
+                  ·
+                </span>
                 <span className="ps-tag">{record.category}</span>
               </span>
-              <span className="ps-row-stats">
-                <span className="ps-ideas">
-                  {record.idea_count}/{record.idea_cap}
-                </span>
+              <span className="ps-row-metrics">
                 <span className="ps-fill" title={`${fillPct}% full`}>
                   <span className="ps-fill-bar" style={{ width: `${fillPct}%` }} />
                 </span>
                 <span className="ps-delta">
-                  Δ1d {formatDelta(record.delta_1d)} · Δ3d {formatDelta(record.delta_3d)}
+                  <span className="ps-delta-item">1d {formatDelta(record.delta_1d)}</span>
+                  <span className="ps-delta-item">3d {formatDelta(record.delta_3d)}</span>
                 </span>
               </span>
             </button>
