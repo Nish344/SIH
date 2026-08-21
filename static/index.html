@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIH 2026 - Problem Statement Explorer & Advanced Analytics</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="background-glow"></div>
+    
+    <!-- Top Header Navigation -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="logo-group">
+                <button class="mobile-sidebar-toggle" id="sidebarToggleBtn" title="Toggle Filters">
+                    <i class="fa-solid fa-sliders"></i>
+                </button>
+                <div class="logo-icon">
+                    <i class="fa-solid fa-lightbulb"></i>
+                </div>
+                <div>
+                    <h1>SIH 2026 <span class="badge-tag">EXPLORER</span></h1>
+                    <p class="subtitle">Smart India Hackathon Problem Statement Portal & Analytics</p>
+                </div>
+            </div>
+
+            <div class="header-actions">
+                <div class="last-sync" id="lastSyncTime">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <span>Loading sync time...</span>
+                </div>
+                <button class="btn btn-primary" id="scrapeBtn">
+                    <i class="fa-solid fa-arrows-rotate" id="scrapeSpinner"></i>
+                    <span>Sync Live Data</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dashboard Layout (Left Sidebar + Content) -->
+    <div class="dashboard-layout">
+        <!-- Left Filter Panel -->
+        <aside class="sidebar-panel" id="sidebarPanel">
+            <div class="sidebar-header">
+                <div class="sidebar-title">
+                    <i class="fa-solid fa-sliders"></i>
+                    <h2>Filters & Controls</h2>
+                </div>
+                <button class="btn-text-action" id="resetSidebarFiltersBtn">
+                    <i class="fa-solid fa-rotate-left"></i> Reset All
+                </button>
+            </div>
+
+            <div class="sidebar-scroll-area">
+                <!-- Search Section -->
+                <div class="filter-group">
+                    <label class="filter-label"><i class="fa-solid fa-magnifying-glass"></i> Keyword Search</label>
+                    <div class="search-box-sidebar">
+                        <input type="text" id="searchInput" placeholder="Search ID, Title, Org...">
+                        <button class="clear-search-btn" id="clearSearchBtn" style="display: none;">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Minute Submissions Control Section -->
+                <div class="filter-group highlighted-group">
+                    <div class="filter-group-header">
+                        <label class="filter-label"><i class="fa-solid fa-users"></i> Idea Submissions</label>
+                        <span class="active-badge" id="submissionsBadge">All</span>
+                    </div>
+
+                    <!-- Quick Submission Presets -->
+                    <div class="submission-presets">
+                        <button class="preset-chip active" data-min="" data-max="">All</button>
+                        <button class="preset-chip" data-min="0" data-max="0">0 (Zero)</button>
+                        <button class="preset-chip" data-min="1" data-max="50">1 - 50</button>
+                        <button class="preset-chip" data-min="51" data-max="200">51 - 200</button>
+                        <button class="preset-chip" data-min="201" data-max="500">200+</button>
+                    </div>
+
+                    <!-- Min & Max Number Inputs -->
+                    <div class="range-inputs-dual">
+                        <div class="num-input-wrap">
+                            <span class="input-sublabel">Min Submissions</span>
+                            <input type="number" id="minIdeasInput" min="0" max="500" placeholder="0">
+                        </div>
+                        <div class="range-sep">-</div>
+                        <div class="num-input-wrap">
+                            <span class="input-sublabel">Max Submissions</span>
+                            <input type="number" id="maxIdeasInput" min="0" max="500" placeholder="500">
+                        </div>
+                    </div>
+
+                    <!-- Fill Percentage Slider -->
+                    <div class="slider-control-group">
+                        <div class="slider-label-row">
+                            <span class="input-sublabel"><i class="fa-solid fa-percent"></i> Capacity Fill %</span>
+                            <span class="slider-value-display" id="fillSliderVal">0% - 100%</span>
+                        </div>
+                        <div class="range-inputs-dual margin-top-xs">
+                            <input type="range" id="minFillRange" min="0" max="100" value="0">
+                            <input type="range" id="maxFillRange" min="0" max="100" value="100">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Category Filter -->
+                <div class="filter-group">
+                    <label class="filter-label"><i class="fa-solid fa-layer-group"></i> Category</label>
+                    <div class="category-pills-group">
+                        <button class="cat-pill active" data-category="">
+                            All <span class="pill-count" id="catCountAll">0</span>
+                        </button>
+                        <button class="cat-pill" data-category="Software">
+                            <i class="fa-solid fa-code"></i> Software <span class="pill-count" id="catCountSoftware">0</span>
+                        </button>
+                        <button class="cat-pill" data-category="Hardware">
+                            <i class="fa-solid fa-microchip"></i> Hardware <span class="pill-count" id="catCountHardware">0</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Organizations Accordion / Filter -->
+                <div class="filter-group">
+                    <div class="filter-group-header">
+                        <label class="filter-label"><i class="fa-solid fa-building"></i> Organizations</label>
+                        <span class="selected-count-badge" id="orgsSelectedCount" style="display:none;">0 selected</span>
+                    </div>
+                    <div class="filter-subsearch">
+                        <input type="text" id="orgSearchInput" placeholder="Filter organizations...">
+                    </div>
+                    <div class="checkbox-list-scrollable" id="orgsCheckboxList">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Themes Accordion / Filter -->
+                <div class="filter-group">
+                    <div class="filter-group-header">
+                        <label class="filter-label"><i class="fa-solid fa-tags"></i> Themes</label>
+                        <span class="selected-count-badge" id="themesSelectedCount" style="display:none;">0 selected</span>
+                    </div>
+                    <div class="filter-subsearch">
+                        <input type="text" id="themeSearchInput" placeholder="Filter themes...">
+                    </div>
+                    <div class="checkbox-list-scrollable" id="themesCheckboxList">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Panel -->
+        <main class="main-content-panel">
+            <!-- KPI Summary Cards -->
+            <section class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-icon icon-blue">
+                        <i class="fa-solid fa-list-check"></i>
+                    </div>
+                    <div class="kpi-data">
+                        <span class="kpi-value" id="kpiTotal">0</span>
+                        <span class="kpi-label">Total Statements</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-icon icon-purple">
+                        <i class="fa-solid fa-code"></i>
+                    </div>
+                    <div class="kpi-data">
+                        <span class="kpi-value" id="kpiSoftware">0</span>
+                        <span class="kpi-label">Software PS</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-icon icon-amber">
+                        <i class="fa-solid fa-microchip"></i>
+                    </div>
+                    <div class="kpi-data">
+                        <span class="kpi-value" id="kpiHardware">0</span>
+                        <span class="kpi-label">Hardware PS</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-icon icon-emerald">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                    <div class="kpi-data">
+                        <span class="kpi-value" id="kpiIdeas">0</span>
+                        <span class="kpi-label">Total Ideas Submitted</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-icon icon-rose">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                    <div class="kpi-data">
+                        <span class="kpi-value" id="kpiFillRatio">0%</span>
+                        <span class="kpi-label">Avg Capacity Fill</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Control Bar (Sort & Active Filter Chips) -->
+            <section class="top-controls-bar">
+                <div class="active-chips-container" id="activeChipsContainer">
+                    <span class="chips-label">Active Filters:</span>
+                    <div class="chips-wrapper" id="chipsWrapper">
+                        <span class="chip-none">None (Showing all)</span>
+                    </div>
+                </div>
+
+                <div class="controls-right-group">
+                    <div class="select-wrapper">
+                        <i class="fa-solid fa-sort select-icon"></i>
+                        <select id="sortBy">
+                            <option value="serial">Sort by: Default ID</option>
+                            <option value="title">Title (A-Z)</option>
+                            <option value="organization">Organization</option>
+                            <option value="idea_count_desc">Submissions (High to Low)</option>
+                            <option value="idea_count_asc">Submissions (Low to High)</option>
+                            <option value="fill_ratio_desc">Fill % (High to Low)</option>
+                        </select>
+                    </div>
+
+                    <div class="view-toggle">
+                        <button class="view-btn active" id="viewGridBtn" title="Grid View">
+                            <i class="fa-solid fa-grip"></i>
+                        </button>
+                        <button class="view-btn" id="viewTableBtn" title="Table View">
+                            <i class="fa-solid fa-list"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Results Info Counter -->
+            <div class="results-bar">
+                <div class="results-count">
+                    Showing <strong id="visibleCount">0</strong> of <strong id="totalCount">0</strong> Problem Statements
+                </div>
+            </div>
+
+            <!-- Problem Statements Grid View -->
+            <section id="cardsContainer" class="cards-grid"></section>
+            
+            <!-- Table View -->
+            <section id="tableContainer" class="table-view" style="display: none;">
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>PS ID</th>
+                                <th>Title & Theme</th>
+                                <th>Category</th>
+                                <th>Organization</th>
+                                <th>Submissions</th>
+                                <th>Deadline</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Empty State -->
+            <div id="noResults" class="empty-state" style="display: none;">
+                <i class="fa-solid fa-folder-open empty-icon"></i>
+                <h3>No Matching Problem Statements</h3>
+                <p>No problem statements match your current submission or organization criteria.</p>
+                <button class="btn btn-secondary" id="resetFiltersMainBtn">Reset All Filters</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Detail Modal Dialog -->
+    <div class="modal-backdrop" id="detailModal">
+        <div class="modal-content">
+            <button class="modal-close" id="modalCloseBtn">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="modal-header">
+                <div class="modal-badges">
+                    <span class="ps-number-tag" id="modalPsNumber">PS000</span>
+                    <span class="category-badge" id="modalCategory">Category</span>
+                    <span class="theme-badge" id="modalTheme">Theme</span>
+                </div>
+                <h2 id="modalTitle" class="modal-title">Problem Statement Title</h2>
+                <div class="modal-meta">
+                    <p><i class="fa-solid fa-building"></i> <strong id="modalOrganization">Organization</strong></p>
+                    <p id="modalDeptWrapper"><i class="fa-solid fa-sitemap"></i> <span id="modalDepartment">Department</span></p>
+                </div>
+            </div>
+
+            <div class="modal-body">
+                <div class="modal-section">
+                    <h3><i class="fa-solid fa-file-lines"></i> Description & Details</h3>
+                    <div id="modalDescriptionHtml" class="description-content"></div>
+                </div>
+
+                <div class="modal-grid-stats">
+                    <div class="stat-box">
+                        <span class="stat-label">Idea Submissions</span>
+                        <span class="stat-value" id="modalIdeas">0 / 500</span>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" id="modalProgressBar"></div>
+                        </div>
+                    </div>
+
+                    <div class="stat-box">
+                        <span class="stat-label">Submission Deadline</span>
+                        <span class="stat-value" id="modalDeadline">N/A</span>
+                    </div>
+
+                    <div class="stat-box" id="modalContactBox">
+                        <span class="stat-label">Contact / Info</span>
+                        <span class="stat-value" id="modalContact">N/A</span>
+                    </div>
+                </div>
+
+                <div class="modal-links" id="modalLinksSection"></div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="modalCloseFooterBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast">
+        <i class="toast-icon fa-solid fa-circle-info"></i>
+        <span id="toastMessage">Message text</span>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
