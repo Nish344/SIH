@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -97,5 +101,19 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             return load_payload(settings.data_path)
         except (FileNotFoundError, ValueError):
             raise HTTPException(status_code=503, detail="scrape_data_unavailable")
+
+    dist = Path(__file__).resolve().parent.parent / "web" / "dist"
+    if dist.is_dir() and (dist / "index.html").is_file():
+        assets_dir = dist / "assets"
+        if assets_dir.is_dir():
+            app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
+        @app.get("/{full_path:path}")
+        async def spa(full_path: str) -> FileResponse:
+            if full_path:
+                candidate = dist / full_path
+                if candidate.is_file():
+                    return FileResponse(candidate)
+            return FileResponse(dist / "index.html")
 
     return app
