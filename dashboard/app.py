@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
@@ -13,6 +14,43 @@ from dashboard.auth import create_session_token, verify_password, verify_session
 from dashboard.config import Settings, load_settings
 from dashboard.data import load_payload
 
+MAX_LOGIN_BODY_BYTES = 1024
+
+
+def _client_ip(request: Request) -> str:
+    """Rate-limit key: first X-Forwarded-For hop when present (ngrok sole ingress)."""
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip() or "unknown"
+    return request.client.host if request.client else "unknown"
+
+
+async def _read_login_body(request: Request) -> dict:
+    content_length = request.headers.get("content-length")
+    if content_length is not None:
+        try:
+            if int(content_length) > MAX_LOGIN_BODY_BYTES:
+                raise HTTPException(
+                    status_code=413, detail="request entity too large"
+                )
+        except ValueError:
+            raise HTTPException(status_code=400, detail="invalid content-length")
+
+    body_bytes = b""
+    async for chunk in request.stream():
+        body_bytes += chunk
+        if len(body_bytes) > MAX_LOGIN_BODY_BYTES:
+            raise HTTPException(status_code=413, detail="request entity too large")
+
+    try:
+        body = json.loads(body_bytes)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="invalid request body")
+    if not isinstance(body, dict):
+        raise HTTPException(status_code=400, detail="invalid request body")
+    return body
+
+
 def create_app(settings: Settings | None = None) -> FastAPI:
     if settings is None:
         settings = load_settings()
@@ -20,7 +58,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI()
     app.state.settings = settings
 
-    limiter = Limiter(key_func=lambda request: request.client.host or "unknown")
+    limiter = Limiter(key_func=_client_ip)
     app.state.limiter = limiter
     app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
     app.add_middleware(SlowAPIMiddleware)
@@ -48,18 +86,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         request: Request,
         settings: Settings = Depends(get_settings),
     ) -> Response:
-        content_length = request.headers.get("content-length")
-        if content_length is not None:
-            try:
-                if int(content_length) > 1024:
-                    raise HTTPException(
-                        status_code=413, detail="request entity too large"
-                    )
-            except ValueError:
-                raise HTTPException(status_code=400, detail="invalid content-length")
-        body = await request.json()
-        if not isinstance(body, dict):
-            raise HTTPException(status_code=400, detail="invalid request body")
+        body = await _read_login_body(request)
         password = body.get("password", "")
         if not verify_password(password, settings.password):
             raise HTTPException(status_code=401, detail="invalid credentials")
@@ -104,6 +131,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     dist = Path(__file__).resolve().parent.parent / "web" / "dist"
     if dist.is_dir() and (dist / "index.html").is_file():
+        dist_resolved = dist.resolve()
         assets_dir = dist / "assets"
         if assets_dir.is_dir():
             app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
@@ -111,8 +139,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         @app.get("/{full_path:path}")
         async def spa(full_path: str) -> FileResponse:
             if full_path:
-                candidate = dist / full_path
-                if candidate.is_file():
+                candidate = (dist / full_path).resolve()
+                if (
+                    candidate.is_relative_to(dist_resolved)
+                    and candidate.is_file()
+                ):
                     return FileResponse(candidate)
             return FileResponse(dist / "index.html")
 

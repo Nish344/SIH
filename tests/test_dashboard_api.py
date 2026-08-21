@@ -98,6 +98,60 @@ def test_login_rejects_oversized_content_length(client: TestClient):
     assert r.status_code == 413
 
 
+def test_login_rejects_oversized_body_without_content_length(client: TestClient):
+    oversized = b'{"password":"' + b"x" * 1024 + b'"}'
+    r = client.post(
+        "/login",
+        content=oversized,
+        headers={"content-type": "application/json"},
+    )
+    assert r.status_code == 413
+
+
+def test_login_rate_limit_uses_x_forwarded_for(data_file: Path):
+    settings = Settings(
+        password="team-pw",
+        session_secret="test-secret-key-32chars-minimum!!",
+        data_path=data_file,
+    )
+    client = TestClient(create_app(settings))
+    headers = {"X-Forwarded-For": "203.0.113.50"}
+    for _ in range(5):
+        assert (
+            client.post("/login", json={"password": "nope"}, headers=headers).status_code
+            == 401
+        )
+    assert (
+        client.post("/login", json={"password": "nope"}, headers=headers).status_code
+        == 429
+    )
+
+
+def test_spa_blocks_path_traversal(data_file: Path):
+    repo_root = Path(__file__).resolve().parent.parent
+    requirements = repo_root / "requirements.txt"
+    assert requirements.is_file()
+    secret_marker = requirements.read_text(encoding="utf-8")[:80]
+
+    dist = repo_root / "web" / "dist"
+    dist.mkdir(parents=True, exist_ok=True)
+    index = dist / "index.html"
+    index.write_text("<html><body>spa-index</body></html>", encoding="utf-8")
+
+    settings = Settings(
+        password="team-pw",
+        session_secret="test-secret-key-32chars-minimum!!",
+        data_path=data_file,
+    )
+    client = TestClient(create_app(settings))
+
+    for path in ("/../requirements.txt", "/..%2frequirements.txt", "/%2e%2e/requirements.txt"):
+        r = client.get(path)
+        assert secret_marker not in r.text
+        assert "spa-index" in r.text
+        assert r.status_code == 200
+
+
 def test_login_rejects_malformed_content_length(client: TestClient):
     r = client.post(
         "/login",
