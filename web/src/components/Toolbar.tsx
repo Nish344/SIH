@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { Filters, SortMode } from "../types";
 
 const SORT_OPTIONS: { value: SortMode; label: string }[] = [
@@ -28,21 +29,51 @@ export function Toolbar({
   onFiltersChange,
   onSortChange,
 }: ToolbarProps) {
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const hasFacetFilters = Boolean(filters.category || filters.theme || filters.organization);
+
   function setFilter<K extends keyof Filters>(key: K, value: Filters[K]) {
     onFiltersChange({ ...filters, [key]: value });
   }
 
   return (
     <div className="toolbar">
-      <input
-        type="search"
-        className="toolbar-search"
-        placeholder="Search title, org, PS number, description…"
-        value={filters.query}
-        onChange={(e) => setFilter("query", e.target.value)}
-        aria-label="Search problem statements"
-      />
-      <div className="toolbar-filters">
+      <div className="toolbar-primary">
+        <input
+          type="search"
+          className="toolbar-search"
+          placeholder="Search title, org, PS number, description…"
+          value={filters.query}
+          onChange={(e) => setFilter("query", e.target.value)}
+          aria-label="Search problem statements"
+        />
+        <label className="toolbar-sort">
+          Sort
+          <select value={sort} onChange={(e) => onSortChange(e.target.value as SortMode)}>
+            {SORT_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <button
+        type="button"
+        className="toolbar-filters-toggle"
+        aria-expanded={filtersOpen}
+        aria-controls="toolbar-facet-filters"
+        onClick={() => setFiltersOpen((open) => !open)}
+      >
+        Filters
+        {hasFacetFilters && <span className="toolbar-filters-badge" aria-hidden="true" />}
+      </button>
+
+      <div
+        id="toolbar-facet-filters"
+        className={`toolbar-filters${filtersOpen ? " is-open" : ""}`}
+      >
         <label>
           Category
           <select
@@ -82,7 +113,7 @@ export function Toolbar({
             ))}
           </select>
         </label>
-        <label>
+        <label className="toolbar-sort toolbar-sort--inline">
           Sort
           <select value={sort} onChange={(e) => onSortChange(e.target.value as SortMode)}>
             {SORT_OPTIONS.map((o) => (

@@ -29,7 +29,12 @@ export function PsDetail({ record, sourceUrl, onToast }: PsDetailProps) {
     const plan = openLlm(provider, prompt);
 
     if (plan.mode === "copy_fallback" || action === "copy") {
-      await navigator.clipboard.writeText(prompt);
+      try {
+        await navigator.clipboard.writeText(prompt);
+      } catch {
+        onToast("Could not copy to clipboard — check browser permissions.");
+        return;
+      }
     }
 
     if (action === "open") {

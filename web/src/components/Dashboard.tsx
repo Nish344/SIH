@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { filterAndSort } from "../lib/filterSort";
 import { formatAbsoluteTime, formatRelativeTime } from "../lib/format";
 import { logout } from "../api";
@@ -46,6 +46,12 @@ export function Dashboard({ payload, onLogout }: DashboardProps) {
     [payload.records, filters, sort],
   );
 
+  useEffect(() => {
+    if (selected && !filtered.some((r) => r.ps_id === selected.ps_id)) {
+      setSelected(null);
+    }
+  }, [filtered, selected]);
+
   const hasActiveFilters =
     filters.query || filters.category || filters.theme || filters.organization;
 
@@ -85,10 +91,7 @@ export function Dashboard({ payload, onLogout }: DashboardProps) {
         categories={categories}
         themes={themes}
         organizations={organizations}
-        onFiltersChange={(f) => {
-          setFilters(f);
-          setSelected(null);
-        }}
+        onFiltersChange={setFilters}
         onSortChange={setSort}
       />
 
